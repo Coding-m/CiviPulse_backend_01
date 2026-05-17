@@ -1,0 +1,40 @@
+package com.example.demo.config;
+
+import com.example.demo.security.JwtChannelInterceptor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+@Configuration
+@EnableWebSocketMessageBroker
+@RequiredArgsConstructor
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtChannelInterceptor jwtChannelInterceptor;
+
+    // ✅ WebSocket endpoint — frontend connects here
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*") // ⚠️ Restrict to frontend URL in production
+                .withSockJS();
+    }
+
+    // ✅ Message broker config
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic", "/queue"); // broker destinations
+        registry.setApplicationDestinationPrefixes("/app"); // client sends to /app/...
+        registry.setUserDestinationPrefix("/user");          // user-specific messages
+    }
+
+    // ✅ JWT interceptor — validates token on WebSocket connect
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(jwtChannelInterceptor);
+    }
+}
