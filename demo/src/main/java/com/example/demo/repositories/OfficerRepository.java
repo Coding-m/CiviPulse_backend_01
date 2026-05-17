@@ -16,15 +16,14 @@ public interface OfficerRepository extends JpaRepository<Officer, Long> {
     // Find officer by email
     Officer findByEmail(String email);
 
-    // ✅ NEW — Single query replaces N+1 pattern in AdminComplaintService.getAllOfficersWorkload()
-    // Counts active (PENDING + IN_PROGRESS) complaints per officer via LEFT JOIN
+    // ✅ Removed CAST — PostgreSQL handles enums directly
     @Query("""
         SELECT new com.example.demo.payload.OfficerWorkloadResponse(
             o.id,
             o.name,
             o.email,
-            CAST(o.department AS string),
-            CAST(o.status AS string),
+            o.department,
+            o.status,
             COUNT(c)
         )
         FROM Officer o
