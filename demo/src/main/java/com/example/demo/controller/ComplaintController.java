@@ -2,98 +2,134 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.Citizen;
 import com.example.demo.entity.Complaint;
-import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.payload.ComplaintRequestDTO;
-import com.example.demo.repositories.CitizenRepository;
+import com.example.demo.security.JwtUtils;
 import com.example.demo.service.ComplaintService;
+import com.example.demo.repositories.CitizenRepository;
+
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/citizen")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // 🔥 for Vercel deployment
 public class ComplaintController {
 
     private final ComplaintService complaintService;
-    private final CitizenRepository citizenRepository; // ✅ Only for citizen lookup
+    private final CitizenRepository citizenRepository;
+    private final JwtUtils jwtUtils;
 
-    // ================== HELPER ==================
-    // ✅ Authentication from Spring Security — no manual JWT parsing
-    private Citizen getCitizen(Authentication authentication) {
-        String email = authentication.getName();
-        Citizen citizen = citizenRepository.findByEmail(email);
-        if (citizen == null) {
-            throw new ResourceNotFoundException("Citizen not found: " + email);
+    // ---------------- GET LOGGED-IN CITIZEN ----------------
+    private Citizen getCitizenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Missing or invalid Authorization header");
         }
+
+        String token = authHeader.substring(7);
+        String email = jwtUtils.extractEmail(token);
+
+        Citizen citizen = citizenRepository.findByEmail(email);
+
+        if (citizen == null) {
+            throw new RuntimeException("Citizen not found");
+        }
+
         return citizen;
     }
 
     // ================= CREATE COMPLAINT =================
-    @PostMapping(value = "/complaints/submit", consumes = "multipart/form-data")
+    @PostMapping(
+            value = "/complaints/submit",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<Complaint> createComplaint(
-            Authentication authentication,
+            HttpServletRequest request,
             @ModelAttribute ComplaintRequestDTO dto,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
-        Citizen citizen = getCitizen(authentication);
+
+        Citizen citizen = getCitizenFromRequest(request);
+
         Complaint saved = complaintService.createFromDto(dto, citizen, image);
-        log.info("Complaint submitted, id={}, citizen={}", saved.getId(), citizen.getEmail());
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
+        return ResponseEntity.ok(saved);
     }
 
     // ================= GET MY COMPLAINTS =================
     @GetMapping("/complaints")
-    public ResponseEntity<List<Complaint>> getMyComplaints(Authentication authentication) {
-        Citizen citizen = getCitizen(authentication);
-        List<Complaint> complaints = complaintService.getComplaintsByCitizen(citizen);
-        log.info("Fetched {} complaints for citizen={}", complaints.size(), citizen.getEmail());
-        return ResponseEntity.ok(complaints);
+    public ResponseEntity<Page<Complaint>> getMyComplaints(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+
+        Citizen citizen = getCitizenFromRequest(request);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                complaintService.getComplaintsByCitizen(citizen, pageable)
+        );
     }
 
-    // ================= GET SINGLE COMPLAINT =================
+    // ================= GET SINGLE =================
     @GetMapping("/complaints/{id}")
     public ResponseEntity<Complaint> getComplaintById(
-            Authentication authentication,
+            HttpServletRequest request,
             @PathVariable Long id
     ) {
-        Citizen citizen = getCitizen(authentication);
-        Complaint complaint = complaintService.getComplaintById(id, citizen);
-        log.info("Fetched complaint id={} for citizen={}", id, citizen.getEmail());
-        return ResponseEntity.ok(complaint);
+
+        Citizen citizen = getCitizenFromRequest(request);
+
+        return ResponseEntity.ok(
+                complaintService.getComplaintById(id, citizen)
+        );
     }
 
-    // ================= UPDATE COMPLAINT =================
-    @PutMapping(value = "/complaints/{id}", consumes = "multipart/form-data")
+    // ================= UPDATE =================
+    @PutMapping(
+            value = "/complaints/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<Complaint> updateComplaint(
-            Authentication authentication,
+            HttpServletRequest request,
             @PathVariable Long id,
             @ModelAttribute ComplaintRequestDTO dto,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
-        Citizen citizen = getCitizen(authentication);
-        Complaint updated = complaintService.updateFromDto(citizen.getId(), id, dto, image);
-        log.info("Complaint updated, id={}, citizen={}", updated.getId(), citizen.getEmail());
+
+        Citizen citizen = getCitizenFromRequest(request);
+
+        Complaint updated =
+                complaintService.updateFromDto(citizen.getId(), id, dto, image);
+
         return ResponseEntity.ok(updated);
     }
 
-    // ================= DELETE COMPLAINT =================
+    // ================= DELETE =================
     @DeleteMapping("/complaints/{id}")
     public ResponseEntity<String> deleteComplaint(
-            Authentication authentication,
+            HttpServletRequest request,
             @PathVariable Long id
     ) {
-        Citizen citizen = getCitizen(authentication);
+
+        Citizen citizen = getCitizenFromRequest(request);
+
         complaintService.deleteComplaint(citizen.getId(), id);
-        log.info("Complaint deleted, id={}, citizen={}", id, citizen.getEmail());
-        return ResponseEntity.ok("Complaint deleted successfully");
+
+        return ResponseEntity.ok("✅ Complaint deleted successfully");
     }
 }
