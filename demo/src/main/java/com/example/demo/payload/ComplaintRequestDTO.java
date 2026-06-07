@@ -26,14 +26,10 @@ public class ComplaintRequestDTO {
     // 📝 Optional written location/address
     private String location;
 
-    @NotBlank(message = "Citizen name is required")
-    private String citizenName;
-
     @NotBlank(message = "Citizen phone is required")
     private String citizenPhone;
 
-    @NotNull(message = "showCitizenInfoToAdmin is required")
-    private Boolean showCitizenInfoToAdmin;
+   
 
     // 📌 optional status update
     private String status;
