@@ -7,6 +7,9 @@ import com.example.demo.payload.OfficerComplaintResponse;
 import com.example.demo.repositories.ComplaintRepository;
 import com.example.demo.repositories.MapLocationRepository;
 
+import com.cloudinary.Cloudinary;
+import java.util.Map;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -15,10 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class ComplaintService {
@@ -26,13 +25,25 @@ public class ComplaintService {
     private final ComplaintRepository complaintRepository;
     private final MapLocationRepository mapLocationRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final Cloudinary cloudinary;
 
-    // ================= UPLOAD PATH =================
-    private static final String UPLOAD_ROOT =
-            System.getProperty("user.dir") + File.separator + "uploads";
+    // ================= CLOUDINARY IMAGE UPLOAD =================
+    private String uploadImageToCloudinary(MultipartFile image) {
+        try {
+            Map uploadResult = cloudinary.uploader().upload(
+                    image.getBytes(),
+                    Map.of(
+                            "folder", "complaints",
+                            "resource_type", "image"
+                    )
+            );
 
-    private static final String COMPLAINT_UPLOAD_DIR =
-            UPLOAD_ROOT + File.separator + "complaints";
+            return uploadResult.get("secure_url").toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Cloudinary upload failed", e);
+        }
+    }
 
     // ================= CREATE =================
     public Complaint createFromDto(
@@ -51,13 +62,10 @@ public class ComplaintService {
         }
 
         complaint.setLocation(dto.getLocation());
-      
         complaint.setLatitude(dto.getLatitude());
         complaint.setLongitude(dto.getLongitude());
+        complaint.setCitizen(citizen);
 
-           complaint.setCitizen(citizen);
-
-          // NEW
         complaint.setCitizenName(dto.getCitizenName());
         complaint.setCitizenPhone(dto.getCitizenPhone());
 
@@ -68,7 +76,7 @@ public class ComplaintService {
 
         // ================= IMAGE =================
         if (image != null && !image.isEmpty()) {
-            complaint.setImageUrl(saveImage(image));
+            complaint.setImageUrl(uploadImageToCloudinary(image));
         }
 
         Complaint saved = complaintRepository.save(complaint);
@@ -109,19 +117,18 @@ public class ComplaintService {
         if (dto.getLocation() != null) complaint.setLocation(dto.getLocation());
         if (dto.getLatitude() != null) complaint.setLatitude(dto.getLatitude());
         if (dto.getLongitude() != null) complaint.setLongitude(dto.getLongitude());
-        if (dto.getCitizenName() != null)complaint.setCitizenName(dto.getCitizenName());
-        if (dto.getCitizenPhone() != null)complaint.setCitizenPhone(dto.getCitizenPhone());
+        if (dto.getCitizenName() != null) complaint.setCitizenName(dto.getCitizenName());
+        if (dto.getCitizenPhone() != null) complaint.setCitizenPhone(dto.getCitizenPhone());
+
         if (dto.getStatus() != null) {
             complaint.setStatus(ComplaintStatus.valueOf(dto.getStatus()));
         }
 
-        // ✅ ALWAYS TRUE (since field removed)
         complaint.setShowCitizenInfoToAdmin(true);
 
         // ================= IMAGE UPDATE =================
         if (image != null && !image.isEmpty()) {
-            deleteImageIfExists(complaint.getImageUrl());
-            complaint.setImageUrl(saveImage(image));
+            complaint.setImageUrl(uploadImageToCloudinary(image));
         }
 
         Complaint saved = complaintRepository.save(complaint);
@@ -146,8 +153,6 @@ public class ComplaintService {
         if (!complaint.getCitizen().getId().equals(citizenId)) {
             throw new RuntimeException("Unauthorized");
         }
-
-        deleteImageIfExists(complaint.getImageUrl());
 
         complaintRepository.delete(complaint);
 
@@ -174,38 +179,6 @@ public class ComplaintService {
         }
 
         return complaint;
-    }
-
-    // ================= IMAGE SAVE =================
-    private String saveImage(MultipartFile image) {
-        try {
-            File dir = new File(COMPLAINT_UPLOAD_DIR);
-            if (!dir.exists()) dir.mkdirs();
-
-            String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            File file = new File(dir, filename);
-            image.transferTo(file);
-
-            return "/uploads/complaints/" + filename;
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save image", e);
-        }
-    }
-
-    // ================= IMAGE DELETE =================
-    private void deleteImageIfExists(String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank()) return;
-
-        String path = imageUrl.startsWith("/uploads/")
-                ? imageUrl.substring(9)
-                : imageUrl;
-
-        File file = new File(UPLOAD_ROOT + File.separator + path);
-
-        if (file.exists() && !file.delete()) {
-            System.err.println("⚠ Failed to delete image: " + file.getAbsolutePath());
-        }
     }
 
     // ================= MAP LOCATION =================
