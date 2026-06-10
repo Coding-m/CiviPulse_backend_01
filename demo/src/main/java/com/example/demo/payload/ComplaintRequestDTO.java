@@ -31,8 +31,6 @@ public class ComplaintRequestDTO {
     private String citizenPhone;
 
    
-    @NotBlank(message = "Citizen phone is required")
-    private String citizenPhone;
 
 
     // 📌 optional status update
