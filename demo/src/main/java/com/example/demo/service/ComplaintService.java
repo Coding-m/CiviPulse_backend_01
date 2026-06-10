@@ -51,15 +51,17 @@ public class ComplaintService {
         }
 
         complaint.setLocation(dto.getLocation());
+      
         complaint.setLatitude(dto.getLatitude());
         complaint.setLongitude(dto.getLongitude());
 
-        // ✅ citizen comes from JWT (NOT frontend)
-        complaint.setCitizen(citizen);
+           complaint.setCitizen(citizen);
 
-        // ✅ DEFAULT VALUE (since you removed showCitizenInfoToAdmin)
+          // NEW
+        complaint.setCitizenName(dto.getCitizenName());
+        complaint.setCitizenPhone(dto.getCitizenPhone());
+
         complaint.setShowCitizenInfoToAdmin(true);
-
         complaint.setPriority(Priority.MEDIUM);
         complaint.setStatus(ComplaintStatus.PENDING);
         complaint.setComplaintStage(ComplaintStage.REGISTERED);
@@ -107,7 +109,8 @@ public class ComplaintService {
         if (dto.getLocation() != null) complaint.setLocation(dto.getLocation());
         if (dto.getLatitude() != null) complaint.setLatitude(dto.getLatitude());
         if (dto.getLongitude() != null) complaint.setLongitude(dto.getLongitude());
-
+        if (dto.getCitizenName() != null)complaint.setCitizenName(dto.getCitizenName());
+        if (dto.getCitizenPhone() != null)complaint.setCitizenPhone(dto.getCitizenPhone());
         if (dto.getStatus() != null) {
             complaint.setStatus(ComplaintStatus.valueOf(dto.getStatus()));
         }
