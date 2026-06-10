@@ -26,19 +26,15 @@ public class ComplaintRequestDTO {
     // 📝 Optional written location/address
     private String location;
 
-<<<<<<< HEAD:demo/src/main/java/com/example/demo/payload/ComplaintRequestDTO.java
+
     @NotBlank(message = "Citizen phone is required")
     private String citizenPhone;
 
    
-
-=======
-  
-
     @NotBlank(message = "Citizen phone is required")
     private String citizenPhone;
 
->>>>>>> 52200fb (Fix ComplaintRepository pagination):src/main/java/com/example/demo/payload/ComplaintRequestDTO.java
+
     // 📌 optional status update
     private String status;
 
