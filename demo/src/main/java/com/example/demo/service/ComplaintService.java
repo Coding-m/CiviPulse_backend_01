@@ -34,7 +34,9 @@ public class ComplaintService {
                     image.getBytes(),
                     Map.of(
                             "folder", "complaints",
-                            "resource_type", "image"
+                            "resource_type", "image",
+                            "quality", "auto",
+                            "fetch_format", "auto"
                     )
             );
 
