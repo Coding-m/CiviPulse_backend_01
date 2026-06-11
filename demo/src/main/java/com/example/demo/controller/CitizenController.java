@@ -29,15 +29,47 @@ public class CitizenController {
     private final CitizenRepository citizenRepository; // ✅ Only for profile lookup helper
 
     // ================== HELPER ==================
-    // ✅ Uses Authentication from Spring Security — no manual JWT parsing
-    private Citizen getCitizen(Authentication authentication) {
-        String email = authentication.getName();
-        Citizen citizen = citizenRepository.findByEmail(email);
-        if (citizen == null) {
-            throw new ResourceNotFoundException("Citizen not found: " + email);
-        }
-        return citizen;
+   // ================== HELPER ==================
+// Uses Spring Security Authentication
+private Citizen getCitizen(Authentication authentication) {
+
+    if (authentication == null) {
+        throw new ResourceNotFoundException(
+                "Authentication missing"
+        );
     }
+
+
+    Object principal = authentication.getPrincipal();
+
+    Citizen citizen;
+
+
+    // If SecurityContext already contains Citizen object
+    if (principal instanceof Citizen) {
+
+        citizen = (Citizen) principal;
+
+    } 
+    else {
+
+        // Otherwise use email from JWT
+        String email = authentication.getName();
+
+        citizen = citizenRepository.findByEmail(email);
+    }
+
+
+    if (citizen == null) {
+
+        throw new ResourceNotFoundException(
+                "Citizen not found"
+        );
+    }
+
+
+    return citizen;
+}
 
     // ================== AUTH ==================
 
