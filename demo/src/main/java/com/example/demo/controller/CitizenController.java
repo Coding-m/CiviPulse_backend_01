@@ -134,21 +134,23 @@ public class CitizenController {
 
     // ================== PROFILE ==================
 
-    @GetMapping("/profile")
-    public ResponseEntity<CitizenProfileResponse> getMyProfile(
-            Authentication authentication) {
-        Citizen citizen = getCitizen(authentication);
-        return ResponseEntity.ok(
-                CitizenProfileResponse.builder()
-                        .name(citizen.getName())
-                        .email(citizen.getEmail())
-                        .phoneNo(citizen.getPhoneNo())
-                        .address(citizen.getAddress())
-                        .age(citizen.getAge())
-                        .build()
+  private Citizen getCitizen(Authentication authentication) {
+  Object principal = authentication.getPrincipal();
+  Citizen citizen;
+  if(principal instanceof Citizen){
+      citizen = (Citizen) principal;
+} else {
+    String email = authentication.getName();
+    citizen = citizenRepository.findByEmail(email);
+}
+if(citizen == null){
+throw new ResourceNotFoundException(
+            "Citizen not found"
         );
-    }
-
+}
+    return citizen;
+}
+    //===========UPDATE PROFILE====================================================
     @PutMapping("/profile")
     public ResponseEntity<CitizenProfileResponse> updateMyProfile(
             Authentication authentication,
