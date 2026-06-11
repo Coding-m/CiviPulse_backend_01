@@ -135,19 +135,32 @@ public class CitizenController {
     // ================== PROFILE ==================
 
   private Citizen getCitizen(Authentication authentication) {
-  Object principal = authentication.getPrincipal();
-  Citizen citizen;
-  if(principal instanceof Citizen){
-      citizen = (Citizen) principal;
-} else {
-    String email = authentication.getName();
-    citizen = citizenRepository.findByEmail(email);
-}
-if(citizen == null){
-throw new ResourceNotFoundException(
+
+    Object principal = authentication.getPrincipal();
+
+    Citizen citizen;
+
+
+    if (principal instanceof Citizen) {
+
+        citizen = (Citizen) principal;
+
+    } else {
+
+        String email = authentication.getName();
+
+        citizen = citizenRepository.findByEmail(email);
+    }
+
+
+    if (citizen == null) {
+
+        throw new ResourceNotFoundException(
             "Citizen not found"
         );
-}
+    }
+
+
     return citizen;
 }
     //===========UPDATE PROFILE====================================================
