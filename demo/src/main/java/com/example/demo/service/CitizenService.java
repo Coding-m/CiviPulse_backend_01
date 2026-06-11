@@ -173,6 +173,19 @@ public class CitizenService {
         return "Reply submitted successfully";
     }
 
+// ================= GET MY PROFILE =================
+
+public CitizenProfileResponse getMyProfile(Citizen citizen) {
+
+    return CitizenProfileResponse.builder()
+            .name(citizen.getName())
+            .email(citizen.getEmail())
+            .phoneNo(citizen.getPhoneNo())
+            .address(citizen.getAddress())
+            .age(citizen.getAge())
+            .build();
+}
+    
     // ================= UPDATE MY PROFILE =================
     public CitizenProfileResponse updateMyProfile(
             Citizen citizen,
