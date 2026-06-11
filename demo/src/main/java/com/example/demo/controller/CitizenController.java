@@ -268,7 +268,18 @@ public class CitizenController {
 
 
 
+// ================== GET PROFILE ==================
 
+@GetMapping("/profile")
+public ResponseEntity<CitizenProfileResponse> getMyProfile(
+        Authentication authentication) {
+
+    Citizen citizen = getCitizen(authentication);
+
+    return ResponseEntity.ok(
+            citizenService.getMyProfile(citizen)
+    );
+}
 
     // ================== PROFILE ==================
 
