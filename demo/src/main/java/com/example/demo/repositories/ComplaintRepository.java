@@ -84,16 +84,16 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     // ================== FILTER ==================
 
-@Query("""
-    SELECT c FROM Complaint c
-    WHERE c.deleted = false
-    AND (:status IS NULL OR c.status = :status)
-    AND (:priority IS NULL OR c.priority = :priority)
-    AND (:search IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%')))
-""")
-List<Complaint> findAllFiltered(
-        @Param("search") String search,
-        @Param("status") ComplaintStatus status,
-        @Param("priority") Priority priority
-);
-}
+// @Query("""
+//     SELECT c FROM Complaint c
+//     WHERE c.deleted = false
+//     AND (:status IS NULL OR c.status = :status)
+//     AND (:priority IS NULL OR c.priority = :priority)
+//     AND (:search IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%')))
+// """)
+// List<Complaint> findAllFiltered(
+//         @Param("search") String search,
+//         @Param("status") ComplaintStatus status,
+//         @Param("priority") Priority priority
+// );
+// }
