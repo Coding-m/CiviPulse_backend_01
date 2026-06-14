@@ -96,5 +96,17 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 //         @Param("status") ComplaintStatus status,
 //         @Param("priority") Priority priority
 // );
-    
+    // ================== FILTER ==================
+
+@Query("""
+    SELECT c FROM Complaint c
+    WHERE c.deleted = false
+""")
+List<Complaint> findAllFiltered(
+        @Param("search") String search,
+        @Param("status") ComplaintStatus status,
+        @Param("priority") Priority priority
+);
+
+}
 }
