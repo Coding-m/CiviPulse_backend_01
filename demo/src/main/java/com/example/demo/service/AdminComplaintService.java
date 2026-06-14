@@ -45,10 +45,28 @@ public class AdminComplaintService {
     }
 
     // -------- LIST ALL COMPLAINTS (DB-level filtering) --------
-    public List<Complaint> listAllComplaints(String search, String status, String priority) {
-        log.info("Fetching complaints - search={}, status={}, priority={}", search, status, priority);
-        return complaintRepository.findAllFiltered(search, status, priority); // ✅ DB query
+  public List<Complaint> listAllComplaints(
+        String search,
+        String status,
+        String priority) {
+
+    ComplaintStatus complaintStatus = null;
+    Priority complaintPriority = null;
+
+    if (status != null && !status.isBlank()) {
+        complaintStatus = ComplaintStatus.valueOf(status.toUpperCase());
     }
+
+    if (priority != null && !priority.isBlank()) {
+        complaintPriority = Priority.valueOf(priority.toUpperCase());
+    }
+
+    return complaintRepository.findAllFiltered(
+            search,
+            complaintStatus,
+            complaintPriority
+    );
+}
 
     // -------- GET COMPLAINT DETAILS --------
     public Complaint getComplaintDetails(Long complaintId) {
