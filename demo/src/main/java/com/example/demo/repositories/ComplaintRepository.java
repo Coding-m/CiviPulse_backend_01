@@ -96,4 +96,5 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 //         @Param("status") ComplaintStatus status,
 //         @Param("priority") Priority priority
 // );
-// }
+    
+}
